@@ -7,6 +7,7 @@ public class Card : MonoBehaviour
 
     [SerializeField] private GameObject frontImage;
     [SerializeField] private GameObject backImage;
+    [SerializeField] private Image iconImage;
 
     private bool isFlipped = false;
     private bool isMatched = false;
@@ -14,8 +15,8 @@ public class Card : MonoBehaviour
     public void Setup(int id, Sprite frontSprite)
     {
         cardID = id;
-        frontImage.GetComponent<Image>().sprite = frontSprite;
-        FlipBack(); // start face down
+        iconImage.sprite = frontSprite;
+        FlipBack();
     }
 
     public void OnClick()
@@ -23,7 +24,7 @@ public class Card : MonoBehaviour
         if (isFlipped || isMatched) return;
 
         Flip();
-        //GameManager.Instance.CardRevealed(this);
+        GameManager.Instance.CardRevealed(this);
     }
 
     public void Flip()

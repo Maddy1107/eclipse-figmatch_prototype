@@ -227,6 +227,7 @@ MonoBehaviour:
   cardID: 0
   frontImage: {fileID: 8571843254545946206}
   backImage: {fileID: 4907021275097569076}
+  iconImage: {fileID: 1095920504768771630}
 --- !u!1 &4907021275097569076
 GameObject:
   m_ObjectHideFlags: 0
