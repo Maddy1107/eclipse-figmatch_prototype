@@ -1,48 +1,88 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
-public class Card : MonoBehaviour
+public class CardUI : MonoBehaviour, ICard
 {
-    public int cardID;
+    [Header("Card Elements")]
+    [SerializeField] private Image frontImage;
+    [SerializeField] private GameObject frontObject;
+    [SerializeField] private GameObject backObject;
 
-    [SerializeField] private GameObject frontImage;
-    [SerializeField] private GameObject backImage;
-    [SerializeField] private Image iconImage;
+    public int CardID { get; private set; }
+    public bool IsFlipped { get; private set; } = false;
+    public bool IsMatched { get; private set; } = false;
 
-    private bool isFlipped = false;
-    private bool isMatched = false;
+    private Button button;
+    private Coroutine flipRoutine;
+
+    private void Awake()
+    {
+        button = GetComponent<Button>();
+        button.onClick.AddListener(OnClick);
+    }
 
     public void Setup(int id, Sprite frontSprite)
     {
-        cardID = id;
-        iconImage.sprite = frontSprite;
-        FlipBack();
+        CardID = id;
+        frontImage.sprite = frontSprite;
+        FlipBack(); // Always start face down
     }
 
-    public void OnClick()
+    private void OnClick()
     {
-        if (isFlipped || isMatched) return;
+        if (IsFlipped || IsMatched || GameManager.Instance.IsBusy) return;
 
         Flip();
-        GameManager.Instance.CardRevealed(this);
+        GameManager.Instance.OnCardSelected(this);
     }
 
     public void Flip()
     {
-        isFlipped = true;
-        frontImage.SetActive(true);
-        backImage.SetActive(false);
+        if (flipRoutine != null) StopCoroutine(flipRoutine);
+        flipRoutine = StartCoroutine(FlipAnimation(true));
+        IsFlipped = true;
     }
 
     public void FlipBack()
     {
-        isFlipped = false;
-        frontImage.SetActive(false);
-        backImage.SetActive(true);
+        if (flipRoutine != null) StopCoroutine(flipRoutine);
+        flipRoutine = StartCoroutine(FlipAnimation(false));
+        IsFlipped = false;
     }
 
     public void SetMatched()
     {
-        isMatched = true;
+        IsMatched = true;
+    }
+
+    private IEnumerator FlipAnimation(bool showFront)
+    {
+        float duration = 0.15f;
+        Vector3 startScale = transform.localScale;
+        Vector3 midScale = new Vector3(0f, 1f, 1f);
+
+        float t = 0;
+        while (t < duration)
+        {
+            transform.localScale = Vector3.Lerp(startScale, midScale, t / duration);
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.localScale = midScale;
+
+        frontObject.SetActive(showFront);
+        backObject.SetActive(!showFront);
+
+        t = 0;
+        while (t < duration)
+        {
+            transform.localScale = Vector3.Lerp(midScale, Vector3.one, t / duration);
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.localScale = Vector3.one;
     }
 }

@@ -1,17 +1,21 @@
 using System.Collections;
 using UnityEngine;
+using TMPro;
 
-public class GameManager : MonoBehaviour
+public class GameManager : MonoBehaviour, IScorable
 {
-    public static GameManager Instance;
+    public static GameManager Instance { get; private set; }
 
-    [Header("Game Settings")]
-    public int totalPairs = 2; // set this in Inspector: 2 for 2x2, 8 for 4x4
+    [SerializeField] private TMP_Text scoreText;
+    [SerializeField] private int totalPairs = 2;
 
-    private Card firstCard;
-    private Card secondCard;
-    private bool isCheckingMatch = false;
+    private ICard firstCard;
+    private ICard secondCard;
     private int matchedPairs = 0;
+    private bool isBusy = false;
+    private int score = 0;
+
+    public bool IsBusy => isBusy;
 
     private void Awake()
     {
@@ -19,9 +23,9 @@ public class GameManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    public void CardRevealed(Card card)
+    public void OnCardSelected(ICard card)
     {
-        if (isCheckingMatch || card == firstCard) return;
+        if (isBusy || card == firstCard) return;
 
         if (firstCard == null)
         {
@@ -36,20 +40,19 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator CheckMatch()
     {
-        isCheckingMatch = true;
-
+        isBusy = true;
         yield return new WaitForSeconds(0.5f);
 
-        if (firstCard.cardID == secondCard.cardID)
+        if (firstCard.CardID == secondCard.CardID)
         {
             firstCard.SetMatched();
             secondCard.SetMatched();
             matchedPairs++;
-            Debug.Log($"Matched Pairs: {matchedPairs}/{totalPairs}");
 
+            AddScore(10);
             if (matchedPairs >= totalPairs)
             {
-                GameOver();
+                Debug.Log("🎉 Game Over!");
             }
         }
         else
@@ -60,12 +63,26 @@ public class GameManager : MonoBehaviour
 
         firstCard = null;
         secondCard = null;
-        isCheckingMatch = false;
+        isBusy = false;
     }
 
-    private void GameOver()
+    public void AddScore(int amount)
     {
-        Debug.Log("🎉 Game Over! All pairs matched.");
-        // Optional: trigger a "You Win!" panel or restart
+        score += amount;
+        scoreText.text = $"Score: {score}";
     }
+
+    public int GetScore() => score;
+
+    public void ResetScore()
+    {
+        score = 0;
+        scoreText.text = $"Score: {score}";
+    }
+
+    public void SetTotalPairs(int value)
+    {
+        totalPairs = value;
+    }
+
 }
