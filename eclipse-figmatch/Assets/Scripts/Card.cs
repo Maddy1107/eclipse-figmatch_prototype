@@ -1,30 +1,47 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Card : MonoBehaviour
 {
-    [SerializeField] private GameObject front;
-    [SerializeField] private GameObject back;
+    public int cardID;
+
+    [SerializeField] private GameObject frontImage;
+    [SerializeField] private GameObject backImage;
 
     private bool isFlipped = false;
+    private bool isMatched = false;
 
-    private void OnMouseDown()
+    public void Setup(int id, Sprite frontSprite)
     {
-        if (isFlipped) return;
+        cardID = id;
+        frontImage.GetComponent<Image>().sprite = frontSprite;
+        FlipBack(); // start face down
+    }
+
+    public void OnClick()
+    {
+        if (isFlipped || isMatched) return;
 
         Flip();
+        //GameManager.Instance.CardRevealed(this);
     }
 
     public void Flip()
     {
         isFlipped = true;
-        front.SetActive(true);
-        back.SetActive(false);
+        frontImage.SetActive(true);
+        backImage.SetActive(false);
     }
 
     public void FlipBack()
     {
         isFlipped = false;
-        front.SetActive(false);
-        back.SetActive(true);
+        frontImage.SetActive(false);
+        backImage.SetActive(true);
+    }
+
+    public void SetMatched()
+    {
+        isMatched = true;
     }
 }
