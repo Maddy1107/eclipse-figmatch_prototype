@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 
-public class CardUI : MonoBehaviour, ICard
+public class Card : MonoBehaviour, ICard
 {
     [Header("Card Elements")]
     [SerializeField] private Image frontImage;
