@@ -7,29 +7,26 @@ public class UIManager : MonoBehaviour
     [Header("UI Screens")]
     [SerializeField] private GameObject mainMenuPanel;
     [SerializeField] private GameObject gamePanel;
+    [SerializeField] private GameObject gameOverPanel;
 
     private void Awake()
     {
-        if (Instance == null)
-            Instance = this;
-        else
-            Destroy(gameObject);
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
-    private void Start()
-    {
-        ShowMainMenu();
-    }
+    private void Start() => ShowMainMenu();
 
-    public void ShowMainMenu()
-    {
-        mainMenuPanel.SetActive(true);
-        gamePanel.SetActive(false);
-    }
+    public void ShowMainMenu() => SetActivePanel(mainMenuPanel);
+    public void ShowGame() => SetActivePanel(gamePanel);
+    public void ShowGameOver() => gameOverPanel.SetActive(true);
 
-    public void ShowGame()
+    private void SetActivePanel(GameObject activePanel)
     {
         mainMenuPanel.SetActive(false);
-        gamePanel.SetActive(true);
+        gamePanel.SetActive(false);
+        gameOverPanel.SetActive(false);
+
+        activePanel.SetActive(true);
     }
 }
