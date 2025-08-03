@@ -26,6 +26,8 @@ public class GameManager : MonoBehaviour, IScorable
 
     private ICard firstCard, secondCard;
 
+    private List<int> lastGeneratedCardIDs = new();
+
     public bool IsBusy => isBusy;
 
     private void Awake()
@@ -42,10 +44,23 @@ public class GameManager : MonoBehaviour, IScorable
             timeTaken += Time.deltaTime;
     }
 
+    public void CheckSaveandStart()
+    {
+        if (SaveSystem.HasSave())
+        {
+            Debug.Log("Resuming saved game...");
+            StartCoroutine(ResumeGrid());
+        }
+        else
+        {
+            Debug.Log("Starting new game...");
+            GenerateGrid();
+        }
+    }
+
     public void GenerateGrid()
     {
-        foreach (Transform child in gridParent)
-            Destroy(child.gameObject);
+        ClearGrid();
 
         timeTaken = 0f;
         isTimerRunning = true;
@@ -53,47 +68,82 @@ public class GameManager : MonoBehaviour, IScorable
         StartCoroutine(SetupGridAndSpawn());
     }
 
+    private void ClearGrid()
+    {
+        foreach (Transform child in gridParent)
+            Destroy(child.gameObject);
+    }
+
     private IEnumerator SetupGridAndSpawn()
     {
         yield return new WaitForEndOfFrame();
 
-        var grid = gridParent.GetComponent<GridLayoutGroup>();
-        var rect = gridParent.GetComponent<RectTransform>();
+        SetupGridLayout();
 
-        if (grid == null || rect.rect.width <= 0 || rect.rect.height <= 0)
+        var generator = new CardGridGenerator(rows, columns);
+        List<int> cardIDs = generator.CardIDs;
+        lastGeneratedCardIDs = cardIDs;
+
+        SpawnCards(cardIDs, new List<int>());
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(gridParent.GetComponent<RectTransform>());
+        SetTotalPairs(cardIDs.Count / 2);
+    }
+
+    private IEnumerator ResumeGrid()
+    {
+        yield return new WaitForEndOfFrame();
+
+        ClearGrid();
+        SetupGridLayout();
+
+        List<int> cardIDs = SaveSystem.GetShuffledIDs();
+        List<int> matchedIDs = SaveSystem.GetMatchedIDs();
+
+        if (cardIDs == null || cardIDs.Count == 0)
         {
-            Debug.LogError($"⚠️ Grid or Rect not ready. Width/Height: {rect.rect.width} / {rect.rect.height}");
+            Debug.LogWarning("⚠️ No saved shuffled data. Falling back to new game.");
+            GenerateGrid();
             yield break;
         }
+
+        lastGeneratedCardIDs = new List<int>(cardIDs);
+        SpawnCards(cardIDs, matchedIDs);
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(gridParent.GetComponent<RectTransform>());
+        SetTotalPairs(cardIDs.Count / 2);
+        isTimerRunning = true;
+    }
+
+    private void SetupGridLayout()
+    {
+        GridLayoutGroup grid = gridParent.GetComponent<GridLayoutGroup>();
+        RectTransform rect = gridParent.GetComponent<RectTransform>();
 
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         grid.constraintCount = columns;
         grid.spacing = new Vector2(spacing, spacing);
-        grid.cellSize = new Vector2(
-            (rect.rect.width - spacing * (columns - 1)) / columns,
-            (rect.rect.height - spacing * (rows - 1)) / rows
-        );
 
-        var generator = new CardGridGenerator(rows, columns);
-        SpawnCards(generator.CardIDs);
+        float width = rect.rect.width;
+        float height = rect.rect.height;
+        float cardWidth = (width - spacing * (columns - 1)) / columns;
+        float cardHeight = (height - spacing * (rows - 1)) / rows;
 
-        yield return null;
-        Canvas.ForceUpdateCanvases();
-        LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
-
-        SetTotalPairs(generator.CardIDs.Count / 2);
+        grid.cellSize = new Vector2(cardWidth, cardHeight);
     }
 
-    private void SpawnCards(List<int> cardIDs)
+    private void SpawnCards(List<int> cardIDs, List<int> matchedIDs)
     {
         foreach (int id in cardIDs)
         {
-            var cardGO = Instantiate(cardPrefab, gridParent);
-            var card = cardGO.GetComponent<ICard>();
-            cardGO.transform.localScale = Vector3.one;
+            GameObject cardGO = Instantiate(cardPrefab, gridParent);
+            ICard card = cardGO.GetComponent<ICard>();
 
             int spriteIndex = id % cardFrontSprites.Length;
             card.Setup(id, cardFrontSprites[spriteIndex]);
+
+            if (matchedIDs.Contains(id))
+                card.SetMatched();
         }
     }
 
@@ -134,6 +184,8 @@ public class GameManager : MonoBehaviour, IScorable
                 UIManager.Instance.ShowGameOver();
                 GameOverPanel.Instance.Show(score, turns, timeTaken);
             }
+
+            SaveProgress();
         }
         else
         {
@@ -146,6 +198,32 @@ public class GameManager : MonoBehaviour, IScorable
 
         firstCard = secondCard = null;
         isBusy = false;
+    }
+
+    private void SaveProgress()
+    {
+        List<int> matchedIDs = new();
+        foreach (Transform child in gridParent)
+        {
+            var c = child.GetComponent<Card>();
+            if (c.IsMatched) matchedIDs.Add(c.CardID);
+        }
+
+        SaveSystem.SaveProgress(score, turns, timeTaken, rows, columns, comboCount, matchedIDs, lastGeneratedCardIDs);
+    }
+
+    private void LoadSavedProgress()
+    {
+        score = SaveSystem.GetScore();
+        turns = SaveSystem.GetTurns();
+        timeTaken = SaveSystem.GetTime();
+        comboCount = SaveSystem.GetCombo();
+        rows = SaveSystem.GetRows();
+        columns = SaveSystem.GetCols();
+
+        scoreText.text = score.ToString();
+        turnText.text = turns.ToString();
+        comboText.text = comboCount > 1 ? $"Combo x{comboCount}" : "";
     }
 
     public void AddScore(int amount)

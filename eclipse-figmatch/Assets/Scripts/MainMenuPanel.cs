@@ -17,7 +17,7 @@ public class MainMenuPanel : MonoBehaviour
     {
         UIManager.Instance.ShowGame();
         GameManager.Instance.ResetGame();
-        GameManager.Instance.GenerateGrid();
+        GameManager.Instance.CheckSaveandStart();
     }
     private void OnExitButtonClicked()
     {
