@@ -1,22 +1,35 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class GameManager : MonoBehaviour, IScorable
 {
     public static GameManager Instance { get; private set; }
 
+    [Header("UI Elements")]
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private TMP_Text turnText;
 
-    [SerializeField] private int totalPairs = 2;
+    [Header("Card Grid Settings")]
+    [SerializeField] private int rows = 2;
+    [SerializeField] private int columns = 2;
+    [SerializeField] private float spacing = 10f;
+
+    [Header("References")]
+    [SerializeField] private GameObject cardPrefab;
+    [SerializeField] private Sprite[] cardFrontSprites;
+    [SerializeField] private Transform gridParent;
+
+    private int totalPairs = 0;
+    private int matchedPairs = 0;
+    private int score = 0;
+    private int turns = 0;
+    private bool isBusy = false;
 
     private ICard firstCard;
     private ICard secondCard;
-    private int matchedPairs = 0;
-    private bool isBusy = false;
-    private int score = 0;
-    private int turns = 0;
 
     public bool IsBusy => isBusy;
 
@@ -25,8 +38,56 @@ public class GameManager : MonoBehaviour, IScorable
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
 
-        ResetScore();
-        ResetTurns();
+        ResetGame(); // just resets internal state, does not spawn cards yet
+    }
+
+    public void GenerateGrid()
+    {
+        foreach (Transform child in gridParent)
+            Destroy(child.gameObject);
+
+        StartCoroutine(SetupGridAndSpawn());
+    }
+
+    private IEnumerator SetupGridAndSpawn()
+    {
+        yield return new WaitForEndOfFrame();
+
+        GridLayoutGroup grid = gridParent.GetComponent<GridLayoutGroup>();
+        RectTransform rect = gridParent.GetComponent<RectTransform>();
+
+        float width = rect.rect.width;
+        float height = rect.rect.height;
+
+        if (grid == null || width <= 0 || height <= 0)
+        {
+            Debug.LogError("⚠️ Grid or Rect not ready. Width/Height: " + width + "/" + height);
+            yield break;
+        }
+
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = columns;
+        grid.spacing = new Vector2(spacing, spacing);
+
+        float cardWidth = (width - (spacing * (columns - 1))) / columns;
+        float cardHeight = (height - (spacing * (rows - 1))) / rows;
+        grid.cellSize = new Vector2(cardWidth, cardHeight);
+
+        var generator = new CardGridGenerator(rows, columns);
+        var cardIDs = generator.CardIDs;
+
+        for (int i = 0; i < cardIDs.Count; i++)
+        {
+            GameObject cardGO = Instantiate(cardPrefab, gridParent);
+            ICard card = cardGO.GetComponent<ICard>();
+
+            int id = cardIDs[i];
+            int spriteIndex = id % cardFrontSprites.Length;
+            card.Setup(id, cardFrontSprites[spriteIndex]);
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
+        SetTotalPairs(cardIDs.Count / 2);
     }
 
     public void OnCardSelected(ICard card)
@@ -57,16 +118,19 @@ public class GameManager : MonoBehaviour, IScorable
             matchedPairs++;
 
             AddScore(10);
+            AudioManager.Instance?.PlayMatch();
 
             if (matchedPairs >= totalPairs)
             {
                 Debug.Log("🎉 Game Over!");
+                // TODO: Trigger GameOver screen or win UI
             }
         }
         else
         {
             firstCard.FlipBack();
             secondCard.FlipBack();
+            AudioManager.Instance?.PlayMismatch();
         }
 
         firstCard = null;
@@ -107,4 +171,13 @@ public class GameManager : MonoBehaviour, IScorable
         totalPairs = value;
     }
 
+    public void ResetGame()
+    {
+        matchedPairs = 0;
+        ResetScore();
+        ResetTurns();
+        firstCard = null;
+        secondCard = null;
+        isBusy = false;
+    }
 }

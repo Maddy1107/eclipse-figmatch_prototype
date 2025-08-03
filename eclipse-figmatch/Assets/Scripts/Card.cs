@@ -26,7 +26,7 @@ public class Card : MonoBehaviour, ICard
     {
         CardID = id;
         frontImage.sprite = frontSprite;
-        FlipBack(); // Always start face down
+        FlipBack();
     }
 
     private void OnClick()
@@ -42,6 +42,7 @@ public class Card : MonoBehaviour, ICard
         if (flipRoutine != null) StopCoroutine(flipRoutine);
         flipRoutine = StartCoroutine(FlipAnimation(true));
         IsFlipped = true;
+        AudioManager.Instance.PlayFlip();
     }
 
     public void FlipBack()
@@ -83,9 +84,35 @@ public class Card : MonoBehaviour, ICard
         }
     }
 
+    public IEnumerator Shake()
+    {
+        float duration = 0.5f;
+        float magnitude = 0.1f;
+
+        Vector3 originalPosition = transform.localPosition;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            float xOffset = Random.Range(-magnitude, magnitude);
+            float yOffset = Random.Range(-magnitude, magnitude);
+            transform.localPosition = originalPosition + new Vector3(xOffset, yOffset, 0f);
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.localPosition = originalPosition;
+    }
 
     private IEnumerator FlipAnimation(bool showFront)
     {
+
+        if (!showFront)
+            StartCoroutine(Shake());
+
+        yield return new WaitForSeconds(0.1f);
+
         float duration = 0.15f;
         Vector3 startScale = transform.localScale;
         Vector3 midScale = new Vector3(0f, 1f, 1f);
