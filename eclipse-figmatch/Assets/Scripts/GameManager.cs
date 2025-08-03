@@ -49,6 +49,7 @@ public class GameManager : MonoBehaviour, IScorable
         if (SaveSystem.HasSave())
         {
             Debug.Log("Resuming saved game...");
+            LoadSavedProgress();
             StartCoroutine(ResumeGrid());
         }
         else
