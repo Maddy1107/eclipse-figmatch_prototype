@@ -53,8 +53,36 @@ public class Card : MonoBehaviour, ICard
 
     public void SetMatched()
     {
+        if (flipRoutine != null) StopCoroutine(flipRoutine);
+        StartCoroutine(HideAfterMatched());
         IsMatched = true;
     }
+
+    private IEnumerator HideAfterMatched()
+    {
+        float duration = 0.2f;
+        Vector3 startScale = transform.localScale;
+        Vector3 endScale = Vector3.zero;
+
+        float t = 0;
+        while (t < duration)
+        {
+            transform.localScale = Vector3.Lerp(startScale, endScale, t / duration);
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.localScale = endScale;
+
+        CanvasGroup group = GetComponent<CanvasGroup>();
+        if (group != null)
+        {
+            group.alpha = 0f;
+            group.interactable = false;
+            group.blocksRaycasts = false;
+        }
+    }
+
 
     private IEnumerator FlipAnimation(bool showFront)
     {

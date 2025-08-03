@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 059efd7f478ab82419ea84f78ee7334e
+guid: 089ffac18f494df468a5666d0d6000a9
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -105,85 +105,22 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Icons1_0
+      name: Gemini_Generated_Image_xnn375xnn375xnn3-removebg-preview_1
       rect:
         serializedVersion: 2
-        x: 10
-        y: 672
-        width: 342
-        height: 342
+        x: 48
+        y: 168
+        width: 402
+        height: 164
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 5921230699bccde4dbfacb8b3f4594fa
-      internalID: -1671805406
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Icons1_1
-      rect:
-        serializedVersion: 2
-        x: 352
-        y: 672
-        width: 342
-        height: 342
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: c71f499cd23129d40ba633eeb1b779ed
-      internalID: -642080862
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Icons1_2
-      rect:
-        serializedVersion: 2
-        x: 10
-        y: 330
-        width: 342
-        height: 342
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 2d3fca423809e4548bd7c06518125c58
-      internalID: -196013496
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Icons1_3
-      rect:
-        serializedVersion: 2
-        x: 352
-        y: 330
-        width: 342
-        height: 342
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 2d1096404c3ca8a47a29175f78a8e79d
-      internalID: 1983305338
+      spriteID: dae9da68ac82d1144884259dfec30766
+      internalID: -763703000
       vertices: []
       indices: 
       edges: []
@@ -199,10 +136,8 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      Icons1_0: -1671805406
-      Icons1_1: -642080862
-      Icons1_2: -196013496
-      Icons1_3: 1983305338
+      Gemini_Generated_Image_xnn375xnn375xnn3-removebg-preview_0: 155297693
+      Gemini_Generated_Image_xnn375xnn375xnn3-removebg-preview_1: -763703000
   spritePackingTag: 
   pSDRemoveMatte: 0
   pSDShowRemoveMatteOption: 0

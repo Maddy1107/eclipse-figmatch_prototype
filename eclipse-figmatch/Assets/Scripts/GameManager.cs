@@ -7,6 +7,8 @@ public class GameManager : MonoBehaviour, IScorable
     public static GameManager Instance { get; private set; }
 
     [SerializeField] private TMP_Text scoreText;
+    [SerializeField] private TMP_Text turnText;
+
     [SerializeField] private int totalPairs = 2;
 
     private ICard firstCard;
@@ -14,6 +16,7 @@ public class GameManager : MonoBehaviour, IScorable
     private int matchedPairs = 0;
     private bool isBusy = false;
     private int score = 0;
+    private int turns = 0;
 
     public bool IsBusy => isBusy;
 
@@ -21,6 +24,9 @@ public class GameManager : MonoBehaviour, IScorable
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+
+        ResetScore();
+        ResetTurns();
     }
 
     public void OnCardSelected(ICard card)
@@ -42,6 +48,7 @@ public class GameManager : MonoBehaviour, IScorable
     {
         isBusy = true;
         yield return new WaitForSeconds(0.5f);
+        AddTurn();
 
         if (firstCard.CardID == secondCard.CardID)
         {
@@ -50,6 +57,7 @@ public class GameManager : MonoBehaviour, IScorable
             matchedPairs++;
 
             AddScore(10);
+
             if (matchedPairs >= totalPairs)
             {
                 Debug.Log("🎉 Game Over!");
@@ -69,7 +77,7 @@ public class GameManager : MonoBehaviour, IScorable
     public void AddScore(int amount)
     {
         score += amount;
-        scoreText.text = $"Score: {score}";
+        scoreText.text = score.ToString();
     }
 
     public int GetScore() => score;
@@ -77,7 +85,21 @@ public class GameManager : MonoBehaviour, IScorable
     public void ResetScore()
     {
         score = 0;
-        scoreText.text = $"Score: {score}";
+        scoreText.text = score.ToString();
+    }
+
+    public void AddTurn()
+    {
+        turns++;
+        turnText.text = turns.ToString();
+    }
+
+    public int GetTurns() => turns;
+
+    public void ResetTurns()
+    {
+        turns = 0;
+        turnText.text = turns.ToString();
     }
 
     public void SetTotalPairs(int value)
