@@ -8,14 +8,11 @@ public class GameManager : MonoBehaviour, IScorable
 {
     public static GameManager Instance { get; private set; }
 
-    [Header("UI Elements")]
-    [SerializeField] private TMP_Text scoreText;
-    [SerializeField] private TMP_Text turnText;
-    [SerializeField] private TMP_Text comboText;
+    [Header("UI")]
+    [SerializeField] private TMP_Text scoreText, turnText, comboText;
 
-    [Header("Card Grid Settings")]
-    [SerializeField] private int rows = 2;
-    [SerializeField] private int columns = 2;
+    [Header("Grid Settings")]
+    [SerializeField] private int rows = 2, columns = 2;
     [SerializeField] private float spacing = 10f;
 
     [Header("References")]
@@ -23,20 +20,11 @@ public class GameManager : MonoBehaviour, IScorable
     [SerializeField] private Sprite[] cardFrontSprites;
     [SerializeField] private Transform gridParent;
 
-    [Header("Game State")]
-    private int totalPairs = 0;
-    private int matchedPairs = 0;
-    private int score = 0;
-    private int turns = 0;
-    private float timeTaken = 0f;
+    private int totalPairs, matchedPairs, score, turns, comboCount;
+    private float timeTaken;
+    private bool isBusy, isTimerRunning;
 
-    private bool isBusy = false;
-    private bool isTimerRunning = false;
-
-    private int comboCount = 0;
-
-    private ICard firstCard;
-    private ICard secondCard;
+    private ICard firstCard, secondCard;
 
     public bool IsBusy => isBusy;
 
@@ -69,41 +57,40 @@ public class GameManager : MonoBehaviour, IScorable
     {
         yield return new WaitForEndOfFrame();
 
-        GridLayoutGroup grid = gridParent.GetComponent<GridLayoutGroup>();
-        RectTransform rect = gridParent.GetComponent<RectTransform>();
+        var grid = gridParent.GetComponent<GridLayoutGroup>();
+        var rect = gridParent.GetComponent<RectTransform>();
 
-        float width = rect.rect.width;
-        float height = rect.rect.height;
-
-        if (grid == null || width <= 0 || height <= 0)
+        if (grid == null || rect.rect.width <= 0 || rect.rect.height <= 0)
         {
-            Debug.LogError($"⚠️ Grid or Rect not ready. Width/Height: {width} / {height}");
+            Debug.LogError($"⚠️ Grid or Rect not ready. Width/Height: {rect.rect.width} / {rect.rect.height}");
             yield break;
         }
 
         grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         grid.constraintCount = columns;
         grid.spacing = new Vector2(spacing, spacing);
+        grid.cellSize = new Vector2(
+            (rect.rect.width - spacing * (columns - 1)) / columns,
+            (rect.rect.height - spacing * (rows - 1)) / rows
+        );
 
-        float cardWidth = (width - spacing * (columns - 1)) / columns;
-        float cardHeight = (height - spacing * (rows - 1)) / rows;
-        grid.cellSize = new Vector2(cardWidth, cardHeight);
+        var generator = new CardGridGenerator(rows, columns);
+        SpawnCards(generator.CardIDs);
 
-        CardGridGenerator generator = new CardGridGenerator(rows, columns);
-        List<int> cardIDs = generator.CardIDs;
-
-        SpawnCards(cardIDs);
-
+        yield return null;
+        Canvas.ForceUpdateCanvases();
         LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
-        SetTotalPairs(cardIDs.Count / 2);
+
+        SetTotalPairs(generator.CardIDs.Count / 2);
     }
 
     private void SpawnCards(List<int> cardIDs)
     {
         foreach (int id in cardIDs)
         {
-            GameObject cardGO = Instantiate(cardPrefab, gridParent);
-            ICard card = cardGO.GetComponent<ICard>();
+            var cardGO = Instantiate(cardPrefab, gridParent);
+            var card = cardGO.GetComponent<ICard>();
+            cardGO.transform.localScale = Vector3.one;
 
             int spriteIndex = id % cardFrontSprites.Length;
             card.Setup(id, cardFrontSprites[spriteIndex]);
@@ -114,10 +101,7 @@ public class GameManager : MonoBehaviour, IScorable
     {
         if (isBusy || card == firstCard) return;
 
-        if (firstCard == null)
-        {
-            firstCard = card;
-        }
+        if (firstCard == null) firstCard = card;
         else
         {
             secondCard = card;
@@ -138,10 +122,8 @@ public class GameManager : MonoBehaviour, IScorable
             matchedPairs++;
 
             comboCount++;
-            int baseScore = 10;
-            int bonus = comboCount > 1 ? baseScore * comboCount : baseScore;
-            AddScore(bonus);
-
+            int points = comboCount > 1 ? 10 * comboCount : 10;
+            AddScore(points);
             comboText.text = comboCount > 1 ? $"Combo x{comboCount}" : "";
 
             AudioManager.Instance?.PlayMatch();
@@ -162,8 +144,7 @@ public class GameManager : MonoBehaviour, IScorable
             AudioManager.Instance?.PlayMismatch();
         }
 
-        firstCard = null;
-        secondCard = null;
+        firstCard = secondCard = null;
         isBusy = false;
     }
 
@@ -178,7 +159,7 @@ public class GameManager : MonoBehaviour, IScorable
     public void ResetScore()
     {
         score = 0;
-        scoreText.text = score.ToString();
+        scoreText.text = "0";
     }
 
     public void AddTurn()
@@ -192,25 +173,21 @@ public class GameManager : MonoBehaviour, IScorable
     public void ResetTurns()
     {
         turns = 0;
-        turnText.text = turns.ToString();
+        turnText.text = "0";
     }
 
-    public void SetTotalPairs(int value)
-    {
-        totalPairs = value;
-    }
+    public void SetTotalPairs(int value) => totalPairs = value;
 
     public void ResetGame()
     {
-        matchedPairs = 0;
-        ResetScore();
-        ResetTurns();
-        firstCard = null;
-        secondCard = null;
+        matchedPairs = score = turns = comboCount = 0;
+        firstCard = secondCard = null;
         isBusy = false;
         timeTaken = 0f;
         isTimerRunning = false;
-        comboCount = 0;
+
+        scoreText.text = "0";
+        turnText.text = "0";
         comboText.text = "";
     }
 }
